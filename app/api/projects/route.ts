@@ -50,6 +50,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, project });
   } catch (error) {
-    return NextResponse.json({ success: false, message: 'Server error' }, { status: 500 });
+    console.error('Project creation error:', error);
+    return NextResponse.json({
+      success: false,
+      message: error instanceof Error ? error.message : 'Server error'
+    }, { status: 500 });
   }
 }

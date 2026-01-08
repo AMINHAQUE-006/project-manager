@@ -3,7 +3,7 @@ import connectDB from '@/lib/mongodb';
 import Task from '@/models/Task';
 import { getTokenFromRequest, verifyToken } from '@/lib/auth';
 
-export async function GET(req: NextRequest) {
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const token = getTokenFromRequest(req);
     if (!token) {
@@ -15,20 +15,21 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, message: 'Invalid token' }, { status: 401 });
     }
 
-    const { searchParams } = new URL(req.url);
-    const projectId = searchParams.get('projectId');
-
     await connectDB();
-    const query = projectId ? { projectId } : {};
-    const tasks = await Task.find(query).sort({ createdAt: -1 });
+    const task = await Task.findById(params.id);
 
-    return NextResponse.json({ success: true, tasks });
+    if (!task) {
+      return NextResponse.json({ success: false, message: 'Task not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, task });
   } catch (error) {
+    console.error('Error fetching task:', error);
     return NextResponse.json({ success: false, message: 'Server error' }, { status: 500 });
   }
 }
 
-export async function POST(req: NextRequest) {
+export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const token = getTokenFromRequest(req);
     if (!token) {
@@ -40,20 +41,44 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: 'Invalid token' }, { status: 401 });
     }
 
-    const { projectId, title, description, priority, assignedTo } = await req.json();
+    const updates = await req.json();
 
     await connectDB();
-    const task = await Task.create({
-      projectId,
-      title,
-      description,
-      priority,
-      assignedTo,
-      status: 'todo',
-    });
+    const task = await Task.findByIdAndUpdate(params.id, updates, { new: true });
 
-    return NextResponse.json({ success: true, task }, { status: 201 });
+    if (!task) {
+      return NextResponse.json({ success: false, message: 'Task not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, task });
   } catch (error) {
+    console.error('Error updating task:', error);
+    return NextResponse.json({ success: false, message: 'Server error' }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const token = getTokenFromRequest(req);
+    if (!token) {
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const decoded = verifyToken(token);
+    if (!decoded) {
+      return NextResponse.json({ success: false, message: 'Invalid token' }, { status: 401 });
+    }
+
+    await connectDB();
+    const task = await Task.findByIdAndDelete(params.id);
+
+    if (!task) {
+      return NextResponse.json({ success: false, message: 'Task not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, message: 'Task deleted' });
+  } catch (error) {
+    console.error('Error deleting task:', error);
     return NextResponse.json({ success: false, message: 'Server error' }, { status: 500 });
   }
 }

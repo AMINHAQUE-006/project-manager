@@ -11,4 +11,4 @@ const TaskSchema = new Schema({
   updatedAt: { type: Date, default: Date.now },
 });
 
-export default models.Task || model('Task', TaskSchema);
+export default models.tasks || model('tasks', TaskSchema);
