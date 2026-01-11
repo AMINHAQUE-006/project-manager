@@ -57,8 +57,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
+    const { id } = await params; 
+
     const token = getTokenFromRequest(req);
     if (!token) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
@@ -69,8 +74,9 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       return NextResponse.json({ success: false, message: 'Invalid token' }, { status: 401 });
     }
 
+
     await connectDB();
-    const task = await Task.findByIdAndDelete(params.id);
+    const task = await Task.findByIdAndDelete(id);
 
     if (!task) {
       return NextResponse.json({ success: false, message: 'Task not found' }, { status: 404 });

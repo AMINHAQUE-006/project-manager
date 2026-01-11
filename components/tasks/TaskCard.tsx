@@ -30,6 +30,7 @@ export default function TaskCard({ task, onDragStart, onDeleted }: TaskCardProps
       });
 
       if (response.ok) {
+        console.log("TASK ID", task._id)
         onDeleted(task._id);
       }
     } catch (error) {
@@ -44,6 +45,7 @@ export default function TaskCard({ task, onDragStart, onDeleted }: TaskCardProps
     medium: 'bg-yellow-100 text-yellow-700',
     high: 'bg-red-100 text-red-700',
   };
+  console.log(task)
 
   return (
     <Card
@@ -95,7 +97,7 @@ export default function TaskCard({ task, onDragStart, onDeleted }: TaskCardProps
           </Badge>
           {task.assignedTo && (
             <Badge variant="outline" className="text-xs">
-              {task.assignedTo}
+              {task.assignedTo.name}, {task.assignedTo.email}
             </Badge>
           )}
         </div>

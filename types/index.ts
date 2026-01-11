@@ -22,7 +22,7 @@ export interface Task {
   projectId: string;
   title: string;
   description: string;
-  assignedTo?: string;
+  assignedTo?: {email: string, name: string, _id: string};
   priority: 'low' | 'medium' | 'high';
   status: 'todo' | 'inprogress' | 'review' | 'completed';
   createdAt: Date;
