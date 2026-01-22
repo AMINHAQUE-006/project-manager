@@ -42,7 +42,6 @@ export default function ProjectDetailPage() {
       
       if (response.ok) {
         const data = await response.json();
-        console.log(data)
         setProject(data.project);
       }
     } catch (error) {

@@ -47,7 +47,6 @@ export async function POST(req: NextRequest) {
       owner: decoded.userId,
       members: [],
     });
-
     return NextResponse.json({ success: true, project });
   } catch (error) {
     console.error('Project creation error:', error);
