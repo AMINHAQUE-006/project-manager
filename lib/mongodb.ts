@@ -30,9 +30,26 @@ export default async function connectDB() {
   }
 
   if (!cached!.promise) {
-    cached!.promise = mongoose.connect(MONGODB_URI).then((mongoose) => mongoose);
+    const opts = {
+      bufferCommands: false,
+    };
+
+    cached!.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+      console.log("Connected to MongoDB Cloud");
+      return mongoose;
+    }).catch((err) => {
+      console.error("MongoDB connection error:", err);
+      cached!.promise = null; // Reset promise on failure
+      throw err;
+    });
   }
 
-  cached!.conn = await cached!.promise;
+  try {
+    cached!.conn = await cached!.promise;
+  } catch (e) {
+    cached!.promise = null;
+    throw e;
+  }
+
   return cached!.conn;
 }

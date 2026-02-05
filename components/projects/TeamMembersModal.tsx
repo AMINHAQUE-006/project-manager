@@ -80,12 +80,12 @@ export default function TeamMembersModal({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={project.owner.image} alt={project.owner.name} />
-                  <AvatarFallback>{(project.owner.name || 'User').substring(0, 2).toUpperCase()}</AvatarFallback>
+                  <AvatarImage src={project.owner?.image} alt={project.owner?.name} />
+                  <AvatarFallback>{(project.owner?.name || 'User').substring(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">{project.owner.name}</p>
-                  <p className="text-xs text-gray-500">{project.owner.email}</p>
+                  <p className="text-sm font-medium text-gray-900">{project.owner?.name || 'Unknown'}</p>
+                  <p className="text-xs text-gray-500">{project.owner?.email || 'No email'}</p>
                 </div>
               </div>
               <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">

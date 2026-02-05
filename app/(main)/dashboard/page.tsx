@@ -30,7 +30,7 @@ type Project = {
 };
 
 export default function DashboardPage() {
-  const { user, loading } = useAuth();
+  const { user, userData, loading } = useAuth();
   const router = useRouter();
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState(false);
@@ -294,7 +294,7 @@ export default function DashboardPage() {
                             <span>{project.members.length + 1} members</span>
                           </div>
                           <Badge variant="secondary" className="text-xs">
-                            {project.owner._id === user?.uid ? 'Owner' : 'Member'}
+                            {project.owner?._id === userData?._id ? 'Owner' : 'Member'}
                           </Badge>
                         </div>
                       </CardContent>

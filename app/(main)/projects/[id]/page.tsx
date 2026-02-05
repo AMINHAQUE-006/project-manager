@@ -68,7 +68,7 @@ export default function ProjectDetailPage() {
   }
 
   // Check if current user is the owner
-  const isOwner = userData?._id === project.owner._id;
+  const isOwner = userData?._id === project.owner?._id;
 
   return (
     <div className="min-h-screen bg-gray-50">
