@@ -16,6 +16,7 @@ export default function TaskBoard({ projectId }: TaskBoardProps) {
   const [loading, setLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   useEffect(() => {
     fetchTasks();
@@ -45,15 +46,22 @@ export default function TaskBoard({ projectId }: TaskBoardProps) {
     setDraggedTask(task);
   };
 
-  const handleDrop = async (newStatus: Task['status']) => {
-    if (!draggedTask || draggedTask.status === newStatus) {
+  const handleDrop = async (newStatus: Task['status'], taskId: string) => {
+    const task = tasks.find(t => t._id === taskId);
+    
+    if (!task || task.status === newStatus) {
       setDraggedTask(null);
       return;
     }
 
+    // Optimistic update
+    setTasks(tasks.map(t => 
+      t._id === taskId ? { ...t, status: newStatus } : t
+    ));
+
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/tasks/${draggedTask._id}`, {
+      const response = await fetch(`/api/tasks/${taskId}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -62,24 +70,47 @@ export default function TaskBoard({ projectId }: TaskBoardProps) {
         body: JSON.stringify({ status: newStatus }),
       });
 
-      if (response.ok) {
+      if (!response.ok) {
+        // Revert on failure
         setTasks(tasks.map(t => 
-          t._id === draggedTask._id ? { ...t, status: newStatus } : t
+          t._id === taskId ? { ...t, status: task.status } : t
         ));
+        console.error('Failed to update task status');
       }
     } catch (error) {
       console.error('Failed to update task:', error);
+      // Revert on failure
+      setTasks(tasks.map(t => 
+        t._id === taskId ? { ...t, status: task.status } : t
+      ));
     } finally {
       setDraggedTask(null);
     }
   };
 
   const handleTaskCreated = (newTask: Task) => {
-    setTasks([...tasks, newTask]);
+    setTasks((prev) => {
+      const exists = prev.find(t => t._id === newTask._id);
+      if (exists) {
+        return prev.map(t => t._id === newTask._id ? newTask : t);
+      }
+      return [...prev, newTask];
+    });
+    setEditingTask(null);
   };
 
   const handleTaskDeleted = (taskId: string) => {
     setTasks(tasks.filter(t => t._id !== taskId));
+  };
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setIsCreateModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsCreateModalOpen(false);
+    setEditingTask(null);
   };
 
   const todoTasks = tasks.filter(t => t.status === 'todo');
@@ -113,6 +144,7 @@ export default function TaskBoard({ projectId }: TaskBoardProps) {
           onDragStart={handleDragStart}
           onDrop={handleDrop}
           onTaskDeleted={handleTaskDeleted}
+          onEdit={handleEditTask}
         />
         <TaskColumn
           title="In Progress"
@@ -121,6 +153,7 @@ export default function TaskBoard({ projectId }: TaskBoardProps) {
           onDragStart={handleDragStart}
           onDrop={handleDrop}
           onTaskDeleted={handleTaskDeleted}
+          onEdit={handleEditTask}
         />
         <TaskColumn
           title="Review"
@@ -129,6 +162,7 @@ export default function TaskBoard({ projectId }: TaskBoardProps) {
           onDragStart={handleDragStart}
           onDrop={handleDrop}
           onTaskDeleted={handleTaskDeleted}
+          onEdit={handleEditTask}
         />
         <TaskColumn
           title="Completed"
@@ -137,14 +171,16 @@ export default function TaskBoard({ projectId }: TaskBoardProps) {
           onDragStart={handleDragStart}
           onDrop={handleDrop}
           onTaskDeleted={handleTaskDeleted}
+          onEdit={handleEditTask}
         />
       </div>
 
       <CreateTaskModal
         projectId={projectId}
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        onClose={handleCloseModal}
         onTaskCreated={handleTaskCreated}
+        taskToEdit={editingTask}
       />
     </div>
   );

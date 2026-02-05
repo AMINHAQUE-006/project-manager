@@ -14,12 +14,14 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  // Redirect logged-in users from home page to dashboard
+  if (pathname === '/' && token) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/projects/:path*'],
+  matcher: ['/', '/dashboard/:path*', '/projects/:path*'],
 };
-
-console.log('Complete Full-Stack Project Manager Setup');
-console.log('Follow the file structure and implementation above');

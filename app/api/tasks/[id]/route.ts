@@ -3,8 +3,9 @@ import connectDB from '@/lib/mongodb';
 import Task from '@/models/Task';
 import { getTokenFromRequest, verifyToken } from '@/lib/auth';
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const token = getTokenFromRequest(req);
     if (!token) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     }
 
     await connectDB();
-    const task = await Task.findById(params.id);
+    const task = await Task.findById(id);
 
     if (!task) {
       return NextResponse.json({ success: false, message: 'Task not found' }, { status: 404 });
@@ -29,8 +30,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const token = getTokenFromRequest(req);
     if (!token) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
@@ -44,7 +46,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const updates = await req.json();
 
     await connectDB();
-    const task = await Task.findByIdAndUpdate(params.id, updates, { new: true });
+    const task = await Task.findByIdAndUpdate(id, updates, { new: true });
 
     if (!task) {
       return NextResponse.json({ success: false, message: 'Task not found' }, { status: 404 });
@@ -62,7 +64,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params; 
+    const { id } = await params;
 
     const token = getTokenFromRequest(req);
     if (!token) {

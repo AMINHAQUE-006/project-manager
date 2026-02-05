@@ -9,15 +9,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ArrowLeft, Users, Plus, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { Project } from '@/types';
+import ProjectSettingsModal from '@/components/projects/ProjectSettingsModal';
+import TeamMembersModal from '@/components/projects/TeamMembersModal';
 
 export default function ProjectDetailPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, userData, loading: authLoading } = useAuth();
   const router = useRouter();
   const params = useParams();
   const projectId = params.id as string;
   
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isTeamOpen, setIsTeamOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -63,6 +67,9 @@ export default function ProjectDetailPage() {
     return null;
   }
 
+  // Check if current user is the owner
+  const isOwner = userData?._id === project.owner._id;
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-6">
@@ -86,11 +93,21 @@ export default function ProjectDetailPage() {
             </div>
             
             <div className="flex gap-2">
-              <Button variant="outline" className="gap-2">
+              <Button 
+                variant="outline" 
+                className="gap-2"
+                onClick={() => setIsTeamOpen(true)}
+              >
                 <Users size={18} />
-                Team ({project.members.length})
+                Team ({project.members.length + 1})
               </Button>
-              <Button variant="outline" className="gap-2">
+              <Button 
+                variant="outline" 
+                className="gap-2"
+                disabled={!isOwner}
+                onClick={() => setIsSettingsOpen(true)}
+                title={!isOwner ? "Only owners can access settings" : ""}
+              >
                 <Settings size={18} />
                 Settings
               </Button>
@@ -100,6 +117,21 @@ export default function ProjectDetailPage() {
 
         {/* Task Board */}
         <TaskBoard projectId={projectId} />
+
+        {/* Modals */}
+        <ProjectSettingsModal 
+            project={project}
+            isOpen={isSettingsOpen}
+            onClose={() => setIsSettingsOpen(false)}
+            onProjectUpdated={(updatedProject) => setProject(updatedProject)}
+        />
+
+        <TeamMembersModal 
+            project={project}
+            isOpen={isTeamOpen}
+            onClose={() => setIsTeamOpen(false)}
+            onMemberInvited={fetchProject}
+        />
       </div>
     </div>
   );

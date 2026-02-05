@@ -13,8 +13,17 @@ import {
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
+export type DbUser = {
+  _id: string;
+  email: string;
+  name: string;
+  image?: string;
+  createdAt?: string | Date;
+};
+
 type AuthContextType = {
   user: User | null;
+  userData: DbUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
@@ -26,6 +35,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [userData, setUserData] = useState<DbUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -39,8 +49,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             body: JSON.stringify({ firebaseUid: u.uid }),
           });
           const data = await res.json();
-        if (data.success) {
+          if (data.success) {
             localStorage.setItem('token', data.token);
+            setUserData(data.user);
             // Cookie is now set by the server
           }
         } catch (e) {
@@ -48,6 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } else {
         localStorage.removeItem('token');
+        setUserData(null);
         // Cookie is cleared by the server (on logout) or expires naturally
       }
       setUser(u);
@@ -56,8 +68,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsub();
   }, []);
 
-  const setSession = (token: string) => {
+  const setSession = (token: string, dbUser: DbUser) => {
     localStorage.setItem('token', token);
+    setUserData(dbUser);
     // Cookie is set by the server
   };
 
@@ -70,7 +83,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
     const data = await res.json();
     if (data.success) {
-      setSession(data.token);
+      setSession(data.token, data.user);
     } else {
       throw new Error(data.message);
     }
@@ -85,7 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
     const data = await res.json();
     if (data.success) {
-      setSession(data.token);
+      setSession(data.token, data.user);
     } else {
       throw new Error(data.message);
     }
@@ -94,6 +107,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     await signOut(auth);
     localStorage.removeItem('token');
+    setUserData(null);
     // Call logout API to clear cookie
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
@@ -131,7 +145,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data.success) {
-        setSession(data.token);
+        setSession(data.token, data.user);
       } else {
         console.error('Google Login/Register failed:', data);
         throw new Error(data.message || 'Authentication failed');
@@ -143,7 +157,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, googleLogin }}>
+    <AuthContext.Provider value={{ user, userData, loading, login, register, logout, googleLogin }}>
       {children}
     </AuthContext.Provider>
   );

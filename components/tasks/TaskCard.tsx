@@ -11,9 +11,10 @@ interface TaskCardProps {
   task: Task;
   onDragStart: () => void;
   onDeleted: (taskId: string) => void;
+  onEdit: (task: Task) => void;
 }
 
-export default function TaskCard({ task, onDragStart, onDeleted }: TaskCardProps) {
+export default function TaskCard({ task, onDragStart, onDeleted, onEdit }: TaskCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
@@ -50,7 +51,12 @@ export default function TaskCard({ task, onDragStart, onDeleted }: TaskCardProps
   return (
     <Card
       draggable
-      onDragStart={onDragStart}
+      onDragStart={(e) => {
+        // Set dataTransfer for Firefox compatibility
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', task._id);
+        onDragStart();
+      }}
       className="cursor-move hover:shadow-md transition-shadow"
     >
       <CardContent className="p-4">
@@ -71,7 +77,7 @@ export default function TaskCard({ task, onDragStart, onDeleted }: TaskCardProps
               className="h-7 w-7"
               onClick={(e) => {
                 e.stopPropagation();
-                // Edit functionality
+                onEdit(task);
               }}
             >
               <Edit2 className="h-3 w-3" />

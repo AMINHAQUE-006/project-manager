@@ -8,8 +8,9 @@ interface TaskColumnProps {
   status: Task['status'];
   tasks: Task[];
   onDragStart: (task: Task) => void;
-  onDrop: (status: Task['status']) => void;
+  onDrop: (status: Task['status'], taskId: string) => void;
   onTaskDeleted: (taskId: string) => void;
+  onEdit: (task: Task) => void;
 }
 
 export default function TaskColumn({ 
@@ -18,7 +19,8 @@ export default function TaskColumn({
   tasks, 
   onDragStart, 
   onDrop,
-  onTaskDeleted 
+  onTaskDeleted,
+  onEdit
 }: TaskColumnProps) {
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -26,7 +28,10 @@ export default function TaskColumn({
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    onDrop(status);
+    const taskId = e.dataTransfer.getData('text/plain');
+    if (taskId) {
+      onDrop(status, taskId);
+    }
   };
 
   const statusColors = {
@@ -58,6 +63,7 @@ export default function TaskColumn({
             task={task}
             onDragStart={() => onDragStart(task)}
             onDeleted={onTaskDeleted}
+            onEdit={onEdit}
           />
         ))}
         

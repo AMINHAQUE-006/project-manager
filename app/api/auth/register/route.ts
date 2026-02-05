@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
         email: user.email,
         name: user.name,
         image: user.image,
+        createdAt: user.createdAt,
       },
     });
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,11 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2 } from 'lucide-react';
 import { Task } from '@/types';
 
+
 interface CreateTaskModalProps {
   projectId: string;
   isOpen: boolean;
   onClose: () => void;
   onTaskCreated: (task: Task) => void;
+  taskToEdit?: Task | null;
 }
 
 export default function CreateTaskModal({
@@ -22,6 +24,7 @@ export default function CreateTaskModal({
   isOpen,
   onClose,
   onTaskCreated,
+  taskToEdit
 }: CreateTaskModalProps) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -31,14 +34,39 @@ export default function CreateTaskModal({
     assignedTo: '',
   });
 
+  // Effect to populate form when editing
+  useEffect(() => {
+    if (taskToEdit) {
+      setFormData({
+        title: taskToEdit.title,
+        description: taskToEdit.description,
+        priority: taskToEdit.priority,
+        assignedTo: taskToEdit.assignedTo ? taskToEdit.assignedTo.email : '',
+      });
+    } else {
+      setFormData({
+        title: '',
+        description: '',
+        priority: 'medium',
+        assignedTo: '',
+      });
+    }
+  }, [taskToEdit, isOpen]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/tasks', {
-        method: 'POST',
+      const url = taskToEdit 
+        ? `/api/tasks/${taskToEdit._id}` 
+        : '/api/tasks';
+      
+      const method = taskToEdit ? 'PATCH' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -52,16 +80,18 @@ export default function CreateTaskModal({
       if (response.ok) {
         const data = await response.json();
         onTaskCreated(data.task);
-        setFormData({
-          title: '',
-          description: '',
-          priority: 'medium',
-          assignedTo: '',
-        });
+        if (!taskToEdit) {
+            setFormData({
+            title: '',
+            description: '',
+            priority: 'medium',
+            assignedTo: '',
+            });
+        }
         onClose();
       }
     } catch (error) {
-      console.error('Failed to create task:', error);
+      console.error('Failed to save task:', error);
     } finally {
       setLoading(false);
     }
@@ -71,9 +101,9 @@ export default function CreateTaskModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create New Task</DialogTitle>
+          <DialogTitle>{taskToEdit ? 'Edit Task' : 'Create New Task'}</DialogTitle>
           <DialogDescription>
-            Add a new task to your project
+            {taskToEdit ? 'Update task details' : 'Add a new task to your project'}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -133,10 +163,10 @@ export default function CreateTaskModal({
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creating...
+                {taskToEdit ? 'Updating...' : 'Creating...'}
               </>
             ) : (
-              'Create Task'
+              taskToEdit ? 'Update Task' : 'Create Task'
             )}
           </Button>
         </form>
